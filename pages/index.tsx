@@ -1,15 +1,9 @@
 import { useState } from 'react';
 import getTokenBalances from '../utils/getTokenBalances';
 
-type Token = {
-  symbol: string;
-  amount: number;
-  usd: number;
-};
-
 export default function Home() {
   const [address, setAddress] = useState('');
-  const [tokens, setTokens] = useState<Token[]>([]);
+  const [balances, setBalances] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -17,64 +11,71 @@ export default function Home() {
     setLoading(true);
     setError('');
     try {
-      const balances = await getTokenBalances(address);
-      setTokens(balances);
-    } catch (err) {
-      setError('Failed to fetch balances');
+      console.log("🔎 Checking address:", address);
+      const result = await getTokenBalances(address);
+      setBalances(result);
+    } catch (err: any) {
+      console.error("❌ Error:", err);
+      setError('Failed to fetch balances. Please check the address.');
+      setBalances([]);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
+    <div style={{ padding: '2rem', maxWidth: 600, margin: 'auto' }}>
       <h1>🧾 Wallet Checker</h1>
+
       <input
         type="text"
-        placeholder="Enter EVM Address"
+        placeholder="Enter EVM address"
         value={address}
         onChange={(e) => setAddress(e.target.value)}
         style={{
-          padding: '10px',
-          width: '300px',
-          marginRight: '10px',
+          width: '100%',
+          padding: '0.5rem',
+          fontSize: '1rem',
+          marginBottom: '1rem',
           borderRadius: '6px',
           border: '1px solid #ccc'
         }}
       />
+
       <button
         onClick={handleCheck}
-        disabled={!address || loading}
         style={{
-          padding: '10px 20px',
-          backgroundColor: '#333',
-          color: '#fff',
+          padding: '0.5rem 1rem',
+          fontSize: '1rem',
+          cursor: 'pointer',
+          backgroundColor: '#4CAF50',
+          color: 'white',
           border: 'none',
           borderRadius: '6px',
-          cursor: 'pointer'
+          marginBottom: '1rem'
         }}
       >
-        {loading ? 'Loading...' : 'Check Wallet'}
+        {loading ? 'Checking...' : 'Check'}
       </button>
 
-      {error && <p style={{ color: 'red', marginTop: '1rem' }}>{error}</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      <div style={{ marginTop: '2rem' }}>
-        {tokens.map((token, i) => (
-          <div
-            key={i}
-            style={{
-              backgroundColor: '#f5f5f5',
-              padding: '12px',
-              borderRadius: '8px',
-              marginBottom: '10px',
-              textAlign: 'left'
-            }}
-          >
-            <strong>{token.symbol}</strong>: {token.amount.toFixed(4)} (~${token.usd.toFixed(2)})
-          </div>
-        ))}
-      </div>
+      {balances.length > 0 && (
+        <div>
+          <h3>💼 Balances:</h3>
+          <ul>
+            {balances.map((b, i) => (
+              <li key={i}>
+                {b.symbol}: {b.amount.toFixed(4)} (${b.usd.toFixed(2)})
+              </li>
+            ))}
+          </ul>
+          <h4>
+            🧮 Total USD: $
+            {balances.reduce((sum, b) => sum + b.usd, 0).toFixed(2)}
+          </h4>
+        </div>
+      )}
     </div>
   );
 }
